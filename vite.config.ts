@@ -11,24 +11,26 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'lucide-react',
-      '@radix-ui/react-slot',
-      'class-variance-authority',
-      'clsx',
-      'tailwind-merge'
-    ]
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    // Force demo mode in production
+    'import.meta.env.VITE_DEMO_MODE': JSON.stringify(true),
   },
   build: {
     sourcemap: true,
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, 'index.html'),
-      },
-    },
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'recharts'],
+          ui: [
+            '@radix-ui/react-slot',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-toast',
+            'lucide-react'
+          ]
+        }
+      }
+    }
   },
   server: {
     port: 5173,
