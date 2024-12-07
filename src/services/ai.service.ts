@@ -45,6 +45,7 @@ class AIService {
       const response = await this.makeApiRequest(prompts[type]);
       console.log('Analysis completed successfully:', { type });
       const parsedResponse = this.parseResponse(response, type);
+      console.log('Parsed response:', parsedResponse); // Debug log
       return parsedResponse;
     } catch (error) {
       console.error('Analysis failed:', { type, error: (error as Error).message });
@@ -123,12 +124,20 @@ class AIService {
 
   private getSentimentPrompt(text: string): string {
     return [
-      'Analyze the emotional content and sentiment of the following text.',
+      'Analyze the emotional content and sentiment of the following text and provide mood regulation suggestions.',
       'Your response must be a JSON object with these exact fields:',
       '- sentiment: number between -1 and 1',
       '- magnitude: number between 0 and 1',
       '- primaryEmotion: one of [joy, sadness, anger, fear, anxiety, hope, neutral]',
       '- secondaryEmotions: array of the emotions listed above',
+      '- recommendations: array of objects containing:',
+      '  * title: string (short action title)',
+      '  * description: string (detailed explanation)',
+      '  * emotionTarget: string (the emotion this recommendation targets)',
+      '',
+      'Provide 3-5 specific recommendations based on the detected emotions.',
+      'For negative emotions, focus on regulation and coping strategies.',
+      'For positive emotions, focus on maintaining and building upon them.',
       '',
       'Text to analyze: ' + text
     ].join('\n');
@@ -187,7 +196,19 @@ class AIService {
         sentiment: 0,
         magnitude: 0,
         primaryEmotion: 'neutral' as EmotionType,
-        secondaryEmotions: [] as EmotionType[]
+        secondaryEmotions: [] as EmotionType[],
+        recommendations: [
+          {
+            title: 'Practice mindful breathing',
+            description: 'Take slow, deep breaths for 5 minutes to center yourself',
+            emotionTarget: 'anxiety'
+          },
+          {
+            title: 'Progressive muscle relaxation',
+            description: 'Tense and relax each muscle group to release physical tension',
+            emotionTarget: 'stress'
+          }
+        ]
       },
       triggers: {
         identifiedTriggers: [] as Trigger[],

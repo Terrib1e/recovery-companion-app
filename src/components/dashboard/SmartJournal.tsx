@@ -4,11 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAI } from '@/contexts/AIContext';
 import { Brain, Loader, AlertTriangle, Sparkles, ThumbsUp, Book } from 'lucide-react';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RiskLevel } from '@/types/ai';
 
 interface JournalEntry {
   id: string;
@@ -17,8 +14,39 @@ interface JournalEntry {
   analysis?: {
     sentiment: number;
     triggers: string[];
-    recommendations: string[];
+    recommendations: Array<{
+      title: string;
+      description: string;
+      emotionTarget?: string;
+    }>;
   };
+}
+interface AnalysisState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  error?: string;
+}
+type EmotionType = 'joy' | 'sadness' | 'anger' | 'fear' | 'surprise' | 'disgust' | 'neutral';
+
+interface AnalysisResult {
+  sentiment: number;
+  magnitude: number;
+  primaryEmotion: EmotionType;
+  secondaryEmotions: EmotionType[];
+  triggers?: {
+    identifiedTriggers: Array<{
+      type: string;
+      description: string;
+      severity: string;
+      recommendations: string[];
+    }>;
+    riskLevel: string;
+    confidenceScore: number;
+  };
+  recommendations?: Array<{
+    title: string;
+    description: string;
+    emotionTarget?: string;
+  }>;
 }
 
 const SmartJournal: React.FC = () => {
@@ -26,41 +54,123 @@ const SmartJournal: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { state, analyzeContent } = useAI();
   const [currentEntry, setCurrentEntry] = useState<JournalEntry | null>(null);
+  const [analysisState, setAnalysisState] = useState<AnalysisState>({ status: 'idle' });
 
-  const handleAnalyze = useCallback(async () => {
-    if (!content.trim()) return;
+  const validateSentiment = (analysis: any): boolean => {
+    return (
+      typeof analysis?.sentiment === 'number' &&
+      typeof analysis?.magnitude === 'number' &&
+      typeof analysis?.primaryEmotion === 'string' &&
+      Array.isArray(analysis?.secondaryEmotions)
+    );
+  };
 
-    setIsAnalyzing(true);
-    try {
-      const entry: JournalEntry = {
-        id: Date.now().toString(),
-        content: content.trim(),
-        timestamp: new Date().toISOString(),
-      };
+  const validateTriggers = (analysis: any): boolean => {
+    return (
+      !analysis.triggers ||
+      (
+        Array.isArray(analysis?.triggers?.identifiedTriggers) &&
+        analysis.triggers.identifiedTriggers.every(
+          (t: { type: string; description: string; severity: string; recommendations: string[] }): boolean =>
+            typeof t.type === 'string' &&
+            typeof t.description === 'string' &&
+            typeof t.severity === 'string' &&
+            Array.isArray(t.recommendations)
+        ) &&
+        typeof analysis?.triggers?.riskLevel === 'string' &&
+        typeof analysis?.triggers?.confidenceScore === 'number'
+      )
+    );
+  };
 
-      await analyzeContent(content);
-      
-      // Update the entry with AI analysis
-      if (state.lastAnalysis) {
-        entry.analysis = {
-          sentiment: state.lastAnalysis.analysis.sentiment.score,
-          triggers: state.lastAnalysis.analysis.triggers.identifiedTriggers.map(t => t.description),
-          recommendations: state.lastAnalysis.recommendations.map(r => r.title),
-        };
+  const validateRecommendations = (analysis: any): boolean => {
+    return (
+      !analysis.recommendations ||
+      (
+        Array.isArray(analysis?.recommendations) &&
+        analysis.recommendations.every(
+          (r: { title: string; description: string }): boolean =>
+            typeof r.title === 'string' &&
+            typeof r.description === 'string'
+        )
+      )
+    );
+  };
+
+  const isValidAnalysis = (analysis: any): analysis is AnalysisResult => {
+    console.debug('Validating analysis structure:', JSON.stringify(analysis, null, 2));
+
+    if (!validateSentiment(analysis)) {
+      throw new Error('Invalid sentiment data structure');
+    }
+    if (!validateTriggers(analysis)) {
+      throw new Error('Invalid triggers data structure');
+    }
+    if (!validateRecommendations(analysis)) {
+      throw new Error('Invalid recommendations data structure');
+    }
+
+    return true;
+  };
+
+  const handleAnalyze = useCallback(
+    async (retryCount = 0) => {
+      if (!content.trim()) {
+        setAnalysisState({ status: 'error', error: 'Please enter some content to analyze' });
+        return;
       }
 
-      setCurrentEntry(entry);
+      setIsAnalyzing(true);
+      setAnalysisState({ status: 'loading' });
 
-      // In a production environment, we would encrypt and store the entry
-      const existingEntries = JSON.parse(localStorage.getItem('journalEntries') || '[]');
-      localStorage.setItem('journalEntries', JSON.stringify([...existingEntries, entry]));
+      try {
+        const entry: JournalEntry = {
+          id: Date.now().toString(),
+          content: content.trim(),
+          timestamp: new Date().toISOString(),
+        };
 
-    } catch (error) {
-      console.error('Error analyzing journal entry:', error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [content, analyzeContent, state.lastAnalysis]);
+        // Get analysis result directly from analyzeContent
+        const analysisResult = await analyzeContent(content);
+        console.debug('Received analysis result:', analysisResult);
+
+        if (!analysisResult || !isValidAnalysis(analysisResult)) {
+          throw new Error('Invalid or incomplete analysis data received');
+        }
+        // Update entry with analysis data
+        entry.analysis = {
+          sentiment: analysisResult.sentiment,
+          triggers: analysisResult.triggers?.identifiedTriggers.map(trigger => trigger.description) || [],
+          recommendations: analysisResult.recommendations || []
+        };
+
+        console.debug('Updated entry with analysis:', entry);
+
+        setCurrentEntry(entry);
+        setAnalysisState({ status: 'success' });
+
+        const existingEntries = JSON.parse(localStorage.getItem('journalEntries') || '[]');
+        localStorage.setItem('journalEntries', JSON.stringify([...existingEntries, entry]));
+      } catch (error) {
+        console.error('Error analyzing journal entry:', error);
+
+        if (retryCount < 2) {
+          const backoffTime = Math.pow(2, retryCount) * 1000;
+          setTimeout(() => handleAnalyze(retryCount + 1), backoffTime);
+          return;
+        }
+
+        setAnalysisState({
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Failed to analyze entry',
+        });
+        setCurrentEntry(null);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    },
+    [content, analyzeContent],
+  );
 
   const getSentimentIcon = (sentiment: number) => {
     if (sentiment > 0.5) return <ThumbsUp className="w-5 h-5 text-green-500" />;
@@ -74,15 +184,18 @@ const SmartJournal: React.FC = () => {
         <CardTitle className="flex items-center gap-2">
           <Book className="w-6 h-6 text-primary" />
           Smart Journal
-          <span className="ml-2 inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-            AI-Powered
-          </span>
+          <span className="ml-2 inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">AI-Powered</span>
         </CardTitle>
-        <CardDescription>
-          Write about your day, thoughts, or feelings. Our AI will provide helpful insights.
-        </CardDescription>
+        <CardDescription>Write about your day, thoughts, or feelings. Our AI will provide helpful insights.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {analysisState.status === 'error' && (
+          <Alert variant="destructive">
+            <AlertTitle>Analysis Failed</AlertTitle>
+            <AlertDescription>{analysisState.error}</AlertDescription>
+          </Alert>
+        )}
+
         <Textarea
           placeholder="How are you feeling today? What's on your mind?"
           className="min-h-[200px] resize-none"
@@ -101,7 +214,7 @@ const SmartJournal: React.FC = () => {
                 <div className="flex items-center gap-2 mt-1">
                   {getSentimentIcon(currentEntry.analysis.sentiment)}
                   <span className="text-sm text-muted-foreground">
-                    {currentEntry.analysis.sentiment > 0.5 
+                    {currentEntry.analysis.sentiment > 0.5
                       ? 'Your entry shows positive emotions and resilience.'
                       : currentEntry.analysis.sentiment < -0.5
                       ? 'You might be going through a challenging time.'
@@ -118,7 +231,9 @@ const SmartJournal: React.FC = () => {
                 <AlertDescription>
                   <ul className="list-disc pl-4 mt-2">
                     {currentEntry.analysis.triggers.map((trigger, index) => (
-                      <li key={index} className="text-sm">{trigger}</li>
+                      <li key={index} className="text-sm">
+                        {trigger}
+                      </li>
                     ))}
                   </ul>
                 </AlertDescription>
@@ -127,32 +242,32 @@ const SmartJournal: React.FC = () => {
 
             {/* Recommendations */}
             <div className="space-y-2">
-              <h4 className="font-medium">Suggested Actions</h4>
-              <ul className="space-y-2">
+              <h4 className="font-medium">Mood Regulation Suggestions</h4>
+              <div className="grid gap-4">
                 {currentEntry.analysis.recommendations.map((rec, index) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    <ThumbsUp className="w-4 h-4 text-primary" />
-                    {rec}
-                  </li>
+                  <div key={index} className="p-4 bg-secondary/10 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <ThumbsUp className="w-4 h-4 text-primary" />
+                      <h5 className="font-medium">{rec.title}</h5>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">{rec.description}</p>
+                    {rec.emotionTarget && (
+                      <span className="mt-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs">
+                        Targets: {rec.emotionTarget}
+                      </span>
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         )}
       </CardContent>
       <CardFooter className="justify-between">
-        <Button
-          variant="outline"
-          onClick={() => setContent('')}
-          disabled={!content || isAnalyzing}
-        >
+        <Button variant="outline" onClick={() => setContent('')} disabled={!content || isAnalyzing}>
           Clear
         </Button>
-        <Button
-          onClick={handleAnalyze}
-          disabled={!content.trim() || isAnalyzing}
-          className="flex items-center gap-2"
-        >
+        <Button onClick={() => handleAnalyze()} disabled={!content.trim() || isAnalyzing} className="flex items-center gap-2">
           {isAnalyzing ? (
             <>
               <Loader className="w-4 h-4 animate-spin" />

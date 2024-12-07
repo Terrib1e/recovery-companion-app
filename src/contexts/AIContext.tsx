@@ -19,9 +19,9 @@ const initialState: AIContextState = {
   lastAnalysis: null,
   error: null,
   config: {
-    model: 'gpt-4',
+    model: 'gpt-3.5-turbo',
     temperature: 0.7,
-    maxTokens: 1000,
+    maxTokens: 100,
     apiVersion: '2024-02',
     endpoint: ''
   }
@@ -62,27 +62,31 @@ export function AIProvider({ children }: { children: React.ReactNode }) {
 
   // Using useCallback to prevent recreation of the function
   const analyzeContent = useCallback(async (text: string) => {
-    // Prevent multiple simultaneous calls
     if (state.isProcessing) {
       console.log('Already processing, skipping new request');
       return null;
     }
 
-    console.log('Starting AI analysis...'); // Debug log
+    console.log('Starting AI analysis...');
     dispatch({ type: 'START_PROCESSING' });
 
     try {
       const analysis = await aiService.analyze(text, 'sentiment');
-      console.log('AI analysis completed'); // Debug log
-      
+      console.log('AI analysis result:', analysis);
+
+      if (!analysis) {
+        throw new Error('Analysis result is null or undefined');
+      }
+
+      // Update state and return the analysis
       dispatch({ type: 'SET_ANALYSIS', payload: analysis });
-      return analysis;
+      return analysis; // Return the analysis directly instead of accessing state
     } catch (error) {
       console.error('AI analysis error:', error);
       dispatch({ type: 'SET_ERROR', payload: error as Error });
       throw error;
     }
-  }, [state.isProcessing]); // Only depend on processing state
+  }, []); // Remove state.isProcessing dependency
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });
