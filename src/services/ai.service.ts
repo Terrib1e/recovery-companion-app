@@ -1,19 +1,18 @@
-import type { 
+import type {
   AIConfig,
   EmotionType,
   Trigger,
-  RiskLevel 
+  RiskLevel
 } from '../types/ai';
 
 class AIService {
-  private readonly isDemoMode = true; // Force demo mode for production
   config: AIConfig;
 
   constructor(config: AIConfig) {
     this.config = config;
   }
 
-  public async analyze(text: string, type: 'sentiment' | 'triggers' | 'recommendations'): Promise<any> {
+  public async analyze(_text: string, type: 'sentiment' | 'triggers' | 'recommendations'): Promise<any> {
     // Always use fallback responses in production/demo mode
     return this.getFallbackResponse(type);
   }
@@ -32,21 +31,21 @@ class AIService {
         confidenceScore: 0.5
       },
       recommendations: [
-        { 
-          title: 'Practice Deep Breathing', 
-          description: 'Take slow, deep breaths to help calm your mind and body.' 
+        {
+          title: 'Practice Deep Breathing',
+          description: 'Take slow, deep breaths to help calm your mind and body.'
         },
-        { 
-          title: 'Reach Out to Support', 
-          description: 'Connect with your support network or a professional.' 
+        {
+          title: 'Reach Out to Support',
+          description: 'Connect with your support network or a professional.'
         },
-        { 
-          title: 'Use Grounding Techniques', 
-          description: 'Focus on your immediate surroundings using your senses.' 
+        {
+          title: 'Use Grounding Techniques',
+          description: 'Focus on your immediate surroundings using your senses.'
         },
-        { 
-          title: 'Practice Self-Care', 
-          description: 'Engage in activities that promote your wellbeing.' 
+        {
+          title: 'Practice Self-Care',
+          description: 'Engage in activities that promote your wellbeing.'
         }
       ]
     };
