@@ -1,7 +1,4 @@
 import type {
-  AIResponse,
-  SentimentAnalysis,
-  TriggerAnalysis,
   AIConfig,
   EmotionType,
   Trigger,

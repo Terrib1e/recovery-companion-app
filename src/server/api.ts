@@ -9,7 +9,7 @@ const app = express();
 
 // Configure CORS for development
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? 'your-production-domain.com'
     : 'http://localhost:5173'
 }));
@@ -23,10 +23,13 @@ const anthropicProxy = createProxyMiddleware({
   },
   onProxyReq: (proxyReq) => {
     // Add API key from server environment
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY is not defined');
+    }
     proxyReq.setHeader('x-api-key', process.env.ANTHROPIC_API_KEY);
     proxyReq.setHeader('anthropic-version', '2023-06-01');
   },
-  onError: (err, req, res) => {
+  onError: (err, _req, res: express.Response) => {
     console.error('Proxy Error:', err);
     res.status(500).json({ error: 'Proxy service error' });
   }

@@ -5,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAI } from '@/contexts/AIContext';
 import { Brain, Loader, AlertTriangle, Sparkles, ThumbsUp, Book } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { RiskLevel } from '@/types/ai';
 
 interface JournalEntry {
   id: string;
@@ -52,7 +51,7 @@ interface AnalysisResult {
 const SmartJournal: React.FC = () => {
   const [content, setContent] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const { state, analyzeContent } = useAI();
+  const { analyzeContent } = useAI();
   const [currentEntry, setCurrentEntry] = useState<JournalEntry | null>(null);
   const [analysisState, setAnalysisState] = useState<AnalysisState>({ status: 'idle' });
 

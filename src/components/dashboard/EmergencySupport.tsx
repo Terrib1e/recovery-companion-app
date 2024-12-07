@@ -104,7 +104,7 @@ const EmergencySupport: React.FC = () => {
                 key={index}
                 variant={contact.isEmergency ? "destructive" : "secondary"}
                 className="w-full flex items-center justify-between text-left"
-                onClick={() => handleCall(contact.phone)}
+                onClick={() => handleCall(contact)}
               >
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />

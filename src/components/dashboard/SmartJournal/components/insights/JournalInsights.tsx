@@ -1,14 +1,14 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { 
-  LineChart, 
-  Line, 
+import {
+  LineChart,
+  Line,
   BarChart,
   Bar,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -70,12 +70,12 @@ export const JournalInsights: React.FC<JournalInsightsProps> = ({ data }) => {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.emotionData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   stroke={chartColors.text}
                   tick={{ fill: chartColors.text }}
                 />
-                <YAxis 
+                <YAxis
                   stroke={chartColors.text}
                   tick={{ fill: chartColors.text }}
                 />
@@ -85,10 +85,10 @@ export const JournalInsights: React.FC<JournalInsightsProps> = ({ data }) => {
                     borderColor: chartColors.grid,
                   }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={chartColors.primary} 
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={chartColors.primary}
                   strokeWidth={2}
                 />
               </LineChart>
@@ -99,12 +99,12 @@ export const JournalInsights: React.FC<JournalInsightsProps> = ({ data }) => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.triggerData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                <XAxis 
-                  dataKey="name" 
+                <XAxis
+                  dataKey="name"
                   stroke={chartColors.text}
                   tick={{ fill: chartColors.text }}
                 />
-                <YAxis 
+                <YAxis
                   stroke={chartColors.text}
                   tick={{ fill: chartColors.text }}
                 />
@@ -131,10 +131,10 @@ export const JournalInsights: React.FC<JournalInsightsProps> = ({ data }) => {
                   outerRadius={100}
                   label
                 >
-                  {data.activityData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[index % COLORS.length]} 
+                  {data.activityData.map((index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
                     />
                   ))}
                 </Pie>

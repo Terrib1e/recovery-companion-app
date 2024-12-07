@@ -49,10 +49,10 @@ export class StorageService implements IStorageService {
     try {
       // First, stringify the data
       const jsonString = JSON.stringify(data);
-      
+
       // Encrypt the string using AES
       const encrypted = CryptoJS.AES.encrypt(jsonString, this.encryptionKey);
-      
+
       return encrypted.toString();
     } catch (error) {
       console.error('Encryption error:', error);
@@ -69,10 +69,10 @@ export class StorageService implements IStorageService {
     try {
       // Decrypt the data using AES
       const decrypted = CryptoJS.AES.decrypt(encryptedData, this.encryptionKey);
-      
+
       // Convert to original string
       const jsonString = decrypted.toString(CryptoJS.enc.Utf8);
-      
+
       // Parse the JSON string
       return JSON.parse(jsonString);
     } catch (error) {
@@ -99,7 +99,7 @@ export class StorageService implements IStorageService {
     try {
       const prefixedKey = this.getPrefixedKey(key);
       const encryptedValue = this.encrypt(value);
-      
+
       this.storage.setItem(prefixedKey, encryptedValue);
     } catch (error) {
       console.error(`Error storing ${key}:`, error);
@@ -116,9 +116,9 @@ export class StorageService implements IStorageService {
     try {
       const prefixedKey = this.getPrefixedKey(key);
       const encryptedValue = this.storage.getItem(prefixedKey);
-      
+
       if (!encryptedValue) return null;
-      
+
       return this.decrypt(encryptedValue);
     } catch (error) {
       console.error(`Error retrieving ${key}:`, error);
@@ -147,7 +147,7 @@ export class StorageService implements IStorageService {
     try {
       const keys = Object.keys(this.storage);
       const prefixedKeys = keys.filter(key => key.startsWith(this.prefix));
-      
+
       prefixedKeys.forEach(key => {
         this.storage.removeItem(key);
       });
@@ -165,14 +165,14 @@ export class StorageService implements IStorageService {
     try {
       let totalSize = 0;
       const keys = Object.keys(this.storage);
-      
+
       keys.forEach(key => {
         if (key.startsWith(this.prefix)) {
           const item = this.storage.getItem(key) || '';
           totalSize += key.length + item.length;
         }
       });
-      
+
       return totalSize;
     } catch (error) {
       console.error('Error calculating storage size:', error);

@@ -23,27 +23,27 @@ interface MoodLevel {
 }
 
 const moodLevels: MoodLevel[] = [
-  { 
-    value: 1, 
-    label: 'Struggling', 
+  {
+    value: 1,
+    label: 'Struggling',
     icon: <AlertTriangle className="w-6 h-6 text-red-500" />,
     description: 'Having a very difficult time'
   },
-  { 
-    value: 2, 
-    label: 'Challenging', 
+  {
+    value: 2,
+    label: 'Challenging',
     icon: <Brain className="w-6 h-6 text-orange-500" />,
     description: 'Facing some difficulties'
   },
-  { 
-    value: 3, 
-    label: 'Stable', 
+  {
+    value: 3,
+    label: 'Stable',
     icon: <HeartPulse className="w-6 h-6 text-blue-500" />,
     description: 'Managing well'
   },
-  { 
-    value: 4, 
-    label: 'Good', 
+  {
+    value: 4,
+    label: 'Good',
     icon: <ThumbsUp className="w-6 h-6 text-green-500" />,
     description: 'Feeling positive and strong'
   }
@@ -53,7 +53,7 @@ const DailyCheckIn: React.FC = () => {
   const [mood, setMood] = useState<number>(2);
   const [triggers, setTriggers] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { state, analyzeContent } = useAI();
+  useAI();
   const { addEntry } = useProgress();
   const { value: lastCheckIn, setValue: setLastCheckIn } = useStorage<string | null>('lastCheckIn', null);
 
@@ -80,7 +80,6 @@ const DailyCheckIn: React.FC = () => {
       };
 
       // Get AI analysis of the check-in
-      const analysis = await analyzeContent(JSON.stringify(checkInData));
 
       // Add entry to progress tracking
       await addEntry({
@@ -189,7 +188,7 @@ const DailyCheckIn: React.FC = () => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
+        <Button
           className="w-full"
           onClick={handleCheckIn}
           disabled={isSubmitting}
