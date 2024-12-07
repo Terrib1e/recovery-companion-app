@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recovery Companion</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- Error Boundary for Development -->
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error('Global error:', e);
+        if (document.body.innerHTML === '') {
+          document.body.innerHTML = `
+            <div style="padding: 20px; font-family: Arial, sans-serif;">
+              <h2>Application Error</h2>
+              <p>Please check the console for more details.</p>
+            </div>
+          `;
+        }
+      });
+    </script>
+  </body>
+</html>
